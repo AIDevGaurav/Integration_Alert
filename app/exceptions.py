@@ -12,6 +12,25 @@ class MotionDetectionError(CustomError):
     """Exception raised for motion detection errors."""
     pass
 
+class PetError(CustomError):
+    """Exception raised for Pet detection errors."""
+    pass
+
+class PCError(CustomError):
+    """Exception raised for People Count detection errors."""
+    pass
+
+class FireError(CustomError):
+    """Exception raised for People Count detection errors."""
+    pass
+
+class FallError(CustomError):
+    """Exception raised for People Count detection errors."""
+    pass
+
+class ZipError(CustomError):
+    """Exception raised for People Count detection errors."""
+    pass
 
 def handle_exception(e):
     """Handles generic exceptions and returns a JSON response."""

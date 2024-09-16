@@ -1,9 +1,11 @@
+import json
 import multiprocessing
 import cv2
 import time
 import os
 import numpy as np
-from app.utils import capture_image, capture_video, publish_message
+from app.utils import capture_image, capture_video
+from app.mqtt_handler import publish_message_mqtt as pub
 from app.config import logger
 from app.exceptions import MotionDetectionError
 
@@ -82,6 +84,7 @@ def detect_motion(rtsp_url, camera_id, coordinates, motion_type, stop_event):
         while not stop_event.is_set():
             ret, frame = cap.read()
             if not ret:
+                logger.warning(f"Camera failed id: {camera_id}")
                 break
 
             # Resize frame to match display size
@@ -125,8 +128,19 @@ def detect_motion(rtsp_url, camera_id, coordinates, motion_type, stop_event):
                 image_filename = capture_image(frame_copy)
                 video_filename = capture_video(rtsp_url)
 
-                # Publish MQTT message
-                publish_message(motion_type, rtsp_url, camera_id, image_filename, video_filename)
+                try:
+                    message = {
+                        "rtsp_link": rtsp_url,
+                        "cameraId": camera_id,
+                        "type": motion_type,
+                        "image": image_filename,
+                        "video": video_filename
+                    }
+                    pub("motion/detection", json.dumps(message))
+                    logger.info(f"Published message: {message}")
+                except Exception as e:
+                    logger.error(f"Error publishing MQTT message: {e}", exc_info=True)
+                    raise
 
                 last_detection_time = current_time
 
@@ -152,7 +166,7 @@ def detect_motion(rtsp_url, camera_id, coordinates, motion_type, stop_event):
         raise MotionDetectionError(f"Motion detection failed for camera {camera_id}: {str(e)}")
 
 
-def start_detection_process(task):
+def motion_start(task):
     """
     Start the motion detection process in a separate thread for the given camera task.
     """
@@ -175,9 +189,10 @@ def start_detection_process(task):
             return False
     except Exception as e:
         logger.error(f"Failed to start detection process for camera {camera_id}: {str(e)}", exc_info=True)
+        return False
     return True
 
-def stop_detection_process(camera_ids):
+def motion_stop(camera_ids):
     """
     Stop motion detection for the given camera IDs.
     """

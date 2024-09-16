@@ -1,0 +1,6 @@
+/videos
+/.venv
+/images
+/Model
+/.idea
+/pub-sub_Mqtt.py

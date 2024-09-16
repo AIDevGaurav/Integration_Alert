@@ -1,10 +1,9 @@
 import json
-
 import cv2
 import time
 import os
 from app.config import logger
-from app.mqtt_handler import publish_message_mqtt as mqtt_publish
+# from app.mqtt_handler import publish_message_mqtt as mqtt_publish
 
 image_dir = "images"
 video_dir = "videos"
@@ -54,17 +53,17 @@ def capture_video(rtsp_url):
         logger.error(f"Error capturing video: {e}", exc_info=True)
         raise
 
-def publish_message(motion_type, rtsp_url, camera_id, image_filename, video_filename):
-    try:
-        message = {
-            "rtsp_link": rtsp_url,
-            "cameraId": camera_id,
-            "type": motion_type,
-            "image": image_filename,
-            "video": video_filename
-        }
-        mqtt_publish(json.dumps(message))
-        logger.info(f"Published message: {message}")
-    except Exception as e:
-        logger.error(f"Error publishing MQTT message: {e}", exc_info=True)
-        raise
+# def publish_message(motion_type, rtsp_url, camera_id, image_filename, video_filename):
+#     try:
+#         message = {
+#             "rtsp_link": rtsp_url,
+#             "cameraId": camera_id,
+#             "type": motion_type,
+#             "image": image_filename,
+#             "video": video_filename
+#         }
+#         mqtt_publish("motion/detection", json.dumps(message))
+#         logger.info(f"Published message: {message}")
+#     except Exception as e:
+#         logger.error(f"Error publishing MQTT message: {e}", exc_info=True)
+#         raise
