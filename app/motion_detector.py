@@ -33,7 +33,7 @@ def set_roi_based_on_points(points, coordinates):
     return scaled_points
 
 
-def detect_motion(rtsp_url, camera_id, coordinates, motion_type, stop_event):
+def detect_motion(rtsp_url, camera_id, coordinates, motion_type, siteid, stop_event):
     """
     Motion detection loop that captures video frames, detects motion in the ROI,
     and captures images and videos when motion is detected.
@@ -126,18 +126,18 @@ def detect_motion(rtsp_url, camera_id, coordinates, motion_type, stop_event):
                 # Capture image and video
                 frame_copy = frame.copy()
                 image_filename = capture_image(frame_copy)
-                video_filename = capture_video(rtsp_url)
+                video_filename = "testing" # capture_video(rtsp_url)
 
                 try:
                     message = {
                         "rtsp_link": rtsp_url,
                         "cameraId": camera_id,
                         "type": motion_type,
+                        "siteId": siteid,
                         "image": image_filename,
                         "video": video_filename
                     }
-                    pub("motion/detection", json.dumps(message))
-                    logger.info(f"Published message: {message}")
+                    pub("motion/detection", message)
                 except Exception as e:
                     logger.error(f"Error publishing MQTT message: {e}", exc_info=True)
                     raise
@@ -179,7 +179,7 @@ def motion_start(task):
             # Start motion detection in a new process
             process = multiprocessing.Process(
                 target=detect_motion,
-                args=(task["rtsp_link"], camera_id, task["co_ordinates"], task["type"], stop_event)
+                args=(task["rtsp_link"], camera_id, task["co_ordinates"], task["type"], task["siteId"], stop_event)
             )
             tasks_processes[camera_id] = process
             process.start()

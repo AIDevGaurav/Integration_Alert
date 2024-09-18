@@ -10,7 +10,7 @@ from app.exceptions import FireError
 
 tasks_processes = {}  # Dictionary to keep track of running processes
 
-def detect_fire(rtsp_url, camera_id, site_id, coordinates, type, stop_event):
+def detect_fire(rtsp_url, camera_id, site_id, coordinates, type ,display_width, display_height, stop_event):
     """
     Fire detection function that captures video frames, performs inference,
     and publishes a message if fire is detected.
@@ -25,9 +25,6 @@ def detect_fire(rtsp_url, camera_id, site_id, coordinates, type, stop_event):
         model_path = 'Model/best.pt'  # Replace with the path to your YOLOv8 best.pt model
         model = YOLO(model_path)
 
-        # Frame counter for skipping logic
-        frame_skip_interval = 3
-        frame_counter = 0
         last_detection_time = 0
 
         while not stop_event.is_set():
@@ -36,14 +33,9 @@ def detect_fire(rtsp_url, camera_id, site_id, coordinates, type, stop_event):
                 raise FireError(f"Error: Unable to open RTSP stream at {rtsp_url}")
                 break
 
-            # Skip frames based on the frame_skip_interval
-            frame_counter += 1
-            if frame_counter % frame_skip_interval != 0:
-                continue
-
             # Get display width and height from coordinates
-            display_width = coordinates["display_width"]
-            display_height = coordinates["display_height"]
+            display_width = display_width
+            display_height = display_height
 
             # Resize the frame to match display size
             frame = cv2.resize(frame, (display_width, display_height))
@@ -63,14 +55,14 @@ def detect_fire(rtsp_url, camera_id, site_id, coordinates, type, stop_event):
 
                 # Get the class name from the model's class names
                 class_name = model.names[class_id]
-                logger.info(f"Detected class: {class_name}, Confidence: {confidence:.2f}")
+                logger.info(f"Detected class: {class_name}")
 
                 # Only trigger for "fire"
                 if class_name.lower() == "fire":
                     fire_detected = True
                     # Draw bounding box on the frame
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
-                    cv2.putText(frame, f'{class_name} ({confidence:.2f})',
+                    cv2.putText(frame, f'{class_name}',
                                 (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
             # If fire is detected, publish a message
@@ -80,14 +72,14 @@ def detect_fire(rtsp_url, camera_id, site_id, coordinates, type, stop_event):
 
                 frame_copy = frame.copy()
                 image_path = capture_image(frame_copy)  # Save an image when fire is detected
-                video_path = capture_video(rtsp_url)  # Capture video from the stream
+                video_path = "testing" # capture_video(rtsp_url)  # Capture video from the stream
 
                 try:
                     # Publish to MQTT
                     pub_message = {
                         "rtsp_link": rtsp_url,
-                        "camera_id": camera_id,
-                        "site_id": site_id,
+                        "cameraId": camera_id,
+                        "siteId": site_id,
                         "type": type,
                         "image": image_path,
                         "video": video_path
@@ -120,15 +112,17 @@ def fire_start(task):
     """
     try:
         camera_id=task["cameraId"]
+        display_width = task["display_width"]
+        display_height = task["display_height"]
         if camera_id not in tasks_processes:
             stop_event = multiprocessing.Event()
             tasks_processes[camera_id]=stop_event
             # start fire detection
             process = multiprocessing.Process(
                 target=detect_fire,
-                args=(task["rtsp_link"], camera_id, task["siteId"], task["co_ordinates"], task["type"], stop_event)
+                args=(task["rtsp_link"], camera_id, task["siteId"], task["co_ordinates"], task["type"], display_width, display_height, stop_event)
             )
-            tasks_processes["fire_detection"] = process
+            tasks_processes[camera_id] = process
             process.start()
             logger.info(f"Started Fire detection for camera {camera_id}.")
         else:
@@ -138,8 +132,6 @@ def fire_start(task):
         logger.error(f"Failed to start detection process for camera {camera_id}: {str(e)}", exc_info=True)
         return False
     return True
-
-
 
 def fire_stop(camera_ids):
     """

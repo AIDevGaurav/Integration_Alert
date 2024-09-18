@@ -76,7 +76,7 @@ def fall_detect(rtsp_url, camera_id, site_id, display_width, display_height, typ
 
                         frame_copy = frame.copy()
                         image_filename = capture_image(frame_copy)
-                        video_filename = capture_video(rtsp_url)
+                        video_filename = "testing" # capture_video(rtsp_url)
 
                         message = {
                             "cameraId": camera_id,

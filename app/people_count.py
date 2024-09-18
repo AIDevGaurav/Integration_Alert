@@ -7,8 +7,6 @@ from app.exceptions import PCError
 from app.config import logger
 from app.utils import capture_image
 
-model = YOLO('Model/yolov8l.pt')
-
 # Dictionary to store the active processes
 tasks_processes = {}
 
@@ -29,6 +27,7 @@ def set_roi_based_on_points(points, coordinates):
 # Function to capture and process frames for each camera in its own process
 def capture_and_process_frames(camera_id, rtsp_link, site_id, alarm_id, type, coordinates):
     try:
+        model = YOLO('Model/yolov8l.pt')
         cap = cv2.VideoCapture(rtsp_link)
         if not cap.isOpened():
             return logger.error(f"Could Not Open Camera PC for {camera_id}")
@@ -91,7 +90,7 @@ def capture_and_process_frames(camera_id, rtsp_link, site_id, alarm_id, type, co
                     "people_count": people_count,
                     "image":image_filename
                 }
-                pub("motion/detection", message)
+                pub("peoplecount/detection", message)
                 # capture_image(resized_frame, cameraId, people_count)  # Capture and save the frame
                 previous_people_count = people_count  # Update the previous count
 
@@ -101,6 +100,7 @@ def capture_and_process_frames(camera_id, rtsp_link, site_id, alarm_id, type, co
 
         cap.release()
         cv2.destroyAllWindows()
+
     except Exception as e:
         logger.error("Error During People Count")
         return PCError(f"People Count Failed for camera : {camera_id}")
@@ -151,7 +151,7 @@ def start_pc(task):
 
 def stop_pc(camera_ids):
     """
-    Stop motion detection for the given camera IDs.
+    Stop-pc detection for the given camera IDs.
     """
     stopped_tasks = []
     not_found_tasks = []

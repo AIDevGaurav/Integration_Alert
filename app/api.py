@@ -1,4 +1,6 @@
 from flask import Blueprint, request, jsonify
+
+from app.Armed import armed_detection_stop, armed_detection_start
 from app.Pet_detect import pet_start, pet_stop
 from app.Zipline import zipline_start, zipline_stop
 from app.fall import fall_stop, fall_start
@@ -10,7 +12,7 @@ from app.fire import fire_stop, fire_start
 
 api_blueprint = Blueprint('api', __name__)
 
-@api_blueprint.route('/motion_start', methods=['POST'])
+@api_blueprint.route('/motion-detection-start', methods=['POST'])
 def motion():
     try:
         tasks = request.json
@@ -27,7 +29,7 @@ def motion():
     except Exception as e:
         return handle_exception(e)
 
-@api_blueprint.route('/pet_start', methods=['POST'])
+@api_blueprint.route('/pet-detection-start', methods=['POST'])
 def pet():
     try:
         tasks = request.json
@@ -45,7 +47,7 @@ def pet():
         return handle_exception(e)
 
 
-@api_blueprint.route('/people_count_start', methods=['POST'])
+@api_blueprint.route('/people-count-start', methods=['POST'])
 def pc():
     try:
         tasks = request.json
@@ -63,7 +65,7 @@ def pc():
         return handle_exception(e)
 
 
-@api_blueprint.route('/fire_start', methods=['POST'])
+@api_blueprint.route('/fire-start', methods=['POST'])
 def fire():
     try:
         tasks = request.json
@@ -80,7 +82,7 @@ def fire():
     except Exception as e:
         return handle_exception(e)
 
-@api_blueprint.route('/fall_start', methods=['POST'])
+@api_blueprint.route('/fall-detection-start', methods=['POST'])
 def fall():
     try:
         tasks = request.json
@@ -97,7 +99,7 @@ def fall():
     except Exception as e:
         return handle_exception(e)
 
-@api_blueprint.route('/zip_start', methods=['POST'])
+@api_blueprint.route('/zipline-start', methods=['POST'])
 def zip():
     try:
         tasks = request.json
@@ -114,11 +116,28 @@ def zip():
     except Exception as e:
         return handle_exception(e)
 
+@api_blueprint.route('/arm-detection-start', methods=['POST'])
+def arm():
+    try:
+        tasks = request.json
+        if not tasks or not isinstance(tasks, list):
+            raise CustomError("Invalid input data. 'tasks' should be a list.")
+
+        for task in tasks:
+            armed_detection_start(task)
+
+        logger.info("Armed detection tasks started successfully.")
+        return jsonify({"success": True, "message": "Armed detection tasks started"}), 200
+    except CustomError as e:
+        return jsonify({"success": False, "error": str(e), "message": "Failed to start Armed detection tasks."}), 400
+    except Exception as e:
+        return handle_exception(e)
+
 
 @api_blueprint.route('/stop', methods=['POST'])
 def stop_motion_detection():
     try:
-        camera_ids = request.json.get('cameraIds', [])
+        camera_ids = request.json.get('camera_ids', [])
         typ = request.json.get('type')
         if not isinstance(camera_ids, list):
             raise CustomError("'cameraIds' should be an array.")
@@ -135,6 +154,8 @@ def stop_motion_detection():
             response = fall_stop(camera_ids)
         elif typ == "ZIP_LINE_CROSSING":
             response = zipline_stop(camera_ids)
+        elif typ == "ARM_DETECTION":
+            response = armed_detection_stop(camera_ids)
         else:
             return jsonify({"success": False, "message": "Invaild Type"}), 400
 
@@ -143,7 +164,7 @@ def stop_motion_detection():
         else:
             logger.warning(f"No active detection found for cameras: {response['not_found']}")
 
-        return jsonify({"data": response}), 200
+        return jsonify(response), 200
 
     except CustomError as e:
         return jsonify({"success": False, "error": str(e), "message": "Failed to stop detection tasks."}), 400

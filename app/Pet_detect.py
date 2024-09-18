@@ -8,8 +8,6 @@ from app.mqtt_handler import publish_message_mqtt as pub
 from app.config import logger
 from app.exceptions import PetError
 
-model = YOLO('Model/yolov8l.pt')
-
 # Animal class indices in COCO dataset
 animal_classes = [15, 16, 17, 18, 19, 20, 21, 22, 23]  # Cat, Dog, etc.
 
@@ -37,6 +35,7 @@ def detect_animal(rtsp_url, camera_id, site_id, display_width, display_height, t
     :return: Capture Image, Video and Publish Mqtt message
     """
     try:
+        model = YOLO('Model/yolov8l.pt')
         cap = cv2.VideoCapture(rtsp_url)
         if not cap.isOpened():
             raise PetError(f"Failed to open Camera: {camera_id}")
@@ -72,12 +71,12 @@ def detect_animal(rtsp_url, camera_id, site_id, display_width, display_height, t
 
                         # Draw bounding box and label
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        label = f'{class_name} {conf:.2f}%'
+                        label = f'{class_name}%'
                         cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
                         frame_copy = frame.copy()
                         image_filename = capture_image(frame_copy)
-                        video_filename = capture_video(rtsp_url)
+                        video_filename = "testing" # capture_video(rtsp_url)
 
                         # Publish MQTT message
                         message = {
@@ -88,7 +87,7 @@ def detect_animal(rtsp_url, camera_id, site_id, display_width, display_height, t
                             "image": image_filename,
                             "video": video_filename
                         }
-                        pub("pet/detection", json.dumps(message))
+                        pub("pet/detection", message)
                         # print(f"Published message: {json.dumps(message)}")
                         last_detection_time = current_time
 
@@ -119,7 +118,7 @@ def pet_start(task):
         display_height = task["display_height"]
         types = task["type"]
         rtsp_url = task["rtsp_link"]
-        co_ordinate = task["co_ordinate"]
+        co_ordinate = task["co_ordinates"]
         if camera_id not in tasks_processes:
             stop_event = multiprocessing.Event()
             tasks_processes[camera_id] = stop_event

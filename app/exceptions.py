@@ -32,6 +32,10 @@ class ZipError(CustomError):
     """Exception raised for People Count detection errors."""
     pass
 
+class ArmError(CustomError):
+    """Exception raised for People Count detection errors."""
+    pass
+
 def handle_exception(e):
     """Handles generic exceptions and returns a JSON response."""
     logger.error(f"Exception occurred: {str(e)}", exc_info=True)
