@@ -4,7 +4,7 @@ import json
 from app.config import logger
 
 # MQTT Configuration
-broker = "192.168.1.61"
+broker = "172.25.112.1"
 port = 1883
 
 # Initialize the MQTT client once, globally

@@ -71,8 +71,7 @@ def detect_animal(rtsp_url, camera_id, site_id, display_width, display_height, t
 
                         # Draw bounding box and label
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        label = f'{class_name}%'
-                        cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                        cv2.putText(frame, "Animal-Detected",(x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
                         frame_copy = frame.copy()
                         image_filename = capture_image(frame_copy)
